@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar for the table */
+.table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+.dark .table-container::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded;
+}
+
+.dark .table-container::-webkit-scrollbar-thumb {
+  @apply bg-gray-600;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+.dark .table-container::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
