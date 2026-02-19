@@ -50,7 +50,7 @@ export const useCsvStore = create<CsvStore>((set, get) => ({
   isDirty: false,
   data: null,
   delimiter: ',',
-  darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
+  darkMode: typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false,
   searchQuery: '',
   sortColumn: null,
   sortDirection: 'asc',
