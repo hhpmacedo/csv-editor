@@ -1,31 +1,57 @@
-import { useEffect } from 'react';
-import { Toolbar } from './components/Toolbar';
-import { DataGrid } from './components/DataGrid';
-import { useCsvStore } from './store';
-import { openCsvFile, saveCsvFile, saveCsvFileAs } from './services/fileOps';
-import { parseCSV, stringifyCSV, detectDelimiter } from './services/csv';
-import './App.css';
+import { useEffect, useCallback } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { readTextFile } from "@tauri-apps/plugin-fs";
+import { Toolbar } from "./components/Toolbar";
+import { DataGrid } from "./components/DataGrid";
+import { useCsvStore } from "./store";
+import { openCsvFile, saveCsvFile, saveCsvFileAs } from "./services/fileOps";
+import { parseCSV, stringifyCSV, detectDelimiter } from "./services/csv";
+import "./App.css";
 
 function App() {
-  const { 
-    darkMode, 
-    data, 
-    filePath, 
+  const {
+    darkMode,
+    data,
+    filePath,
     fileName,
     delimiter,
-    setData, 
+    setData,
     setFilePath,
     setFileName,
     setDelimiter,
     setIsDirty,
   } = useCsvStore();
 
+  const loadFileFromPath = useCallback(
+    async (path: string) => {
+      const content = await readTextFile(path);
+      const detectedDelimiter = detectDelimiter(content);
+      const parsedData = parseCSV(content, detectedDelimiter);
+      setFilePath(path);
+      setFileName(path.split(/[\\/]/).pop() || "Untitled");
+      setDelimiter(detectedDelimiter);
+      setData(parsedData);
+      setIsDirty(false);
+    },
+    [setData, setFilePath, setFileName, setDelimiter, setIsDirty],
+  );
+
+  // Listen for files opened via "Open With" / file association
+  useEffect(() => {
+    const unlisten = listen<string>("open-file", (event) => {
+      loadFileFromPath(event.payload);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [loadFileFromPath]);
+
   // Apply dark mode class to document
   useEffect(() => {
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
 
@@ -33,7 +59,7 @@ function App() {
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
       // Ctrl+O - Open
-      if (e.ctrlKey && e.key === 'o') {
+      if (e.ctrlKey && e.key === "o") {
         e.preventDefault();
         const result = await openCsvFile();
         if (result) {
@@ -45,61 +71,73 @@ function App() {
           setData(parsedData);
         }
       }
-      
+
       // Ctrl+S - Save
-      if (e.ctrlKey && e.key === 's') {
+      if (e.ctrlKey && e.key === "s") {
         e.preventDefault();
         if (!data) return;
-        
+
         const content = stringifyCSV(data, delimiter);
-        
+
         if (filePath) {
           const success = await saveCsvFile(filePath, content);
           if (success) {
             setIsDirty(false);
           }
         } else {
-          const newPath = await saveCsvFileAs(content, fileName || 'untitled.csv');
+          const newPath = await saveCsvFileAs(
+            content,
+            fileName || "untitled.csv",
+          );
           if (newPath) {
             setFilePath(newPath);
-            setFileName(newPath.split(/[\\/]/).pop() || 'untitled.csv');
+            setFileName(newPath.split(/[\\/]/).pop() || "untitled.csv");
             setIsDirty(false);
           }
         }
       }
-      
+
       // Ctrl+Shift+S - Save As
-      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+      if (e.ctrlKey && e.shiftKey && e.key === "S") {
         e.preventDefault();
         if (!data) return;
-        
+
         const content = stringifyCSV(data, delimiter);
-        const newPath = await saveCsvFileAs(content, fileName || 'untitled.csv');
+        const newPath = await saveCsvFileAs(
+          content,
+          fileName || "untitled.csv",
+        );
         if (newPath) {
           setFilePath(newPath);
-          setFileName(newPath.split(/[\\/]/).pop() || 'untitled.csv');
+          setFileName(newPath.split(/[\\/]/).pop() || "untitled.csv");
           setIsDirty(false);
         }
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [data, filePath, fileName, delimiter, setData, setFilePath, setFileName, setDelimiter, setIsDirty]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    data,
+    filePath,
+    fileName,
+    delimiter,
+    setData,
+    setFilePath,
+    setFileName,
+    setDelimiter,
+    setIsDirty,
+  ]);
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Toolbar />
       <DataGrid />
-      
+
       {/* Status bar */}
       <div className="flex items-center justify-between px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400">
-        <span>
-          {data ? `${data.rows.length} rows` : 'Ready'}
-        </span>
-        <span>
-          Ctrl+O Open • Ctrl+S Save • Double-click to edit
-        </span>
+        <span>{data ? `${data.rows.length} rows` : "Ready"}</span>
+        <span>Ctrl+O Open • Ctrl+S Save • Double-click to edit</span>
       </div>
     </div>
   );
