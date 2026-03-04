@@ -1,0 +1,18 @@
+:root {
+  --bg-primary: #0e0e10;
+  --bg-surface: #1a1a1f;
+  --bg-elevated: #242428;
+  --text-primary: #d4d0cb;
+  --text-secondary: #a8a49e;
+  --text-muted: #5c5a56;
+  --text-faint: #3a3836;
+  --accent-warm: #ff6b35;
+  --accent-cool: #3dffcd;
+  --danger: #ff3b5c;
+  --border-subtle: rgba(255, 255, 255, 0.03);
+  --border-focus: rgba(255, 107, 53, 0.4);
+  --selection-bg: rgba(255, 107, 53, 0.16);
+  --accent-warm-30: rgba(255, 107, 53, 0.3);
+  --accent-warm-50: rgba(255, 107, 53, 0.5);
+  --accent-cool-60: rgba(61, 255, 205, 0.6);
+}

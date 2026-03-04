@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CSV Editor",
+  "productName": "Jolt Tables",
   "version": "0.1.0",
-  "identifier": "com.csveditor.desktop",
+  "identifier": "com.jolttables.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CSV Editor",
+        "title": "Jolt Tables",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

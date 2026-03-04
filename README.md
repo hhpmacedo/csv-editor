@@ -1,6 +1,6 @@
-# CSV Editor
+# Jolt Tables
 
-A fast, lightweight desktop CSV editor built with Tauri 2.0, React 18, TypeScript, and TailwindCSS.
+A fast, lightweight desktop table editor built with Tauri 2, React 19, and TypeScript.
 
 ## Features
 
@@ -51,6 +51,7 @@ npm run tauri build
 ```
 
 Build outputs will be in `src-tauri/target/release/bundle/`:
+
 - `.deb` package (Debian/Ubuntu)
 - `.rpm` package (Fedora/RHEL)
 - `.AppImage` (portable)

@@ -6,9 +6,17 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            if let Some(window) = app.get_webview_window("main") {
-                window.show().ok();
-            }
+            let window = app.get_webview_window("main").unwrap();
+            window.show().ok();
+
+            let win = window.clone();
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = win.emit("close-requested", ());
+                }
+            });
+
             Ok(())
         })
         .build(tauri::generate_context!())
