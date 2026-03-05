@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toColumnLabel } from "./services/csv";
 
 export interface CsvData {
   headers: string[];
@@ -17,12 +18,15 @@ interface CsvStore {
 
   // UI state
   searchQuery: string;
+  isSearchOpen: boolean;
+  hasHeader: boolean;
 
   // Actions
   setFilePath: (path: string | null) => void;
   setFileName: (name: string | null) => void;
   setIsDirty: (dirty: boolean) => void;
   setSearchQuery: (query: string) => void;
+  setSearchOpen: (open: boolean) => void;
 
   // Batch actions
   loadFile: (
@@ -30,6 +34,7 @@ interface CsvStore {
     name: string,
     data: CsvData,
     delimiter: string,
+    hasHeader?: boolean,
   ) => void;
 
   // Cell operations
@@ -39,6 +44,7 @@ interface CsvStore {
   addColumn: (index?: number, header?: string) => void;
   deleteColumn: (index: number) => void;
   updateHeader: (index: number, value: string) => void;
+  toggleHeader: () => void;
 
   // Reset
   reset: () => void;
@@ -51,13 +57,22 @@ export const useCsvStore = create<CsvStore>((set, get) => ({
   data: null,
   delimiter: ",",
   searchQuery: "",
+  isSearchOpen: false,
+  hasHeader: true,
 
   setFilePath: (path) => set({ filePath: path }),
   setFileName: (name) => set({ fileName: name }),
   setIsDirty: (dirty) => set({ isDirty: dirty }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setSearchOpen: (open) => {
+    if (open) {
+      set({ isSearchOpen: true });
+    } else {
+      set({ isSearchOpen: false, searchQuery: "" });
+    }
+  },
 
-  loadFile: (path, name, data, delimiter) =>
+  loadFile: (path, name, data, delimiter, hasHeader = true) =>
     set({
       filePath: path,
       fileName: name,
@@ -65,6 +80,7 @@ export const useCsvStore = create<CsvStore>((set, get) => ({
       delimiter,
       isDirty: false,
       searchQuery: "",
+      hasHeader,
     }),
 
   updateCell: (rowIndex, colIndex, value) => {
@@ -136,6 +152,34 @@ export const useCsvStore = create<CsvStore>((set, get) => ({
     set({ data: { ...data, headers: newHeaders }, isDirty: true });
   },
 
+  toggleHeader: () => {
+    const { data, hasHeader } = get();
+    if (!data) return;
+
+    if (hasHeader) {
+      // Demote headers → first data row; replace with synthetic A/B/C headers
+      const syntheticHeaders = data.headers.map((_, i) => toColumnLabel(i));
+      const newRows = [data.headers, ...data.rows];
+      set({
+        data: { headers: syntheticHeaders, rows: newRows },
+        hasHeader: false,
+        isDirty: true,
+      });
+    } else {
+      // Promote first data row → headers; remove it from rows
+      if (data.rows.length === 0) return;
+      const [firstRow, ...rest] = data.rows;
+      const newHeaders = firstRow.map((v, i) => v || `Column ${i + 1}`);
+      const newRows =
+        rest.length > 0 ? rest : [new Array(newHeaders.length).fill("")];
+      set({
+        data: { headers: newHeaders, rows: newRows },
+        hasHeader: true,
+        isDirty: true,
+      });
+    }
+  },
+
   reset: () =>
     set({
       filePath: null,
@@ -144,5 +188,7 @@ export const useCsvStore = create<CsvStore>((set, get) => ({
       data: null,
       delimiter: ",",
       searchQuery: "",
+      isSearchOpen: false,
+      hasHeader: true,
     }),
 }));

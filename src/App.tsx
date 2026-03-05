@@ -1,11 +1,16 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import { Toolbar } from "./components/Toolbar";
 import { DataGrid } from "./components/DataGrid";
 import { useCsvStore } from "./store";
 import { openCsvFile, saveCsvFile, saveCsvFileAs } from "./services/fileOps";
-import { parseCSV, stringifyCSV, detectDelimiter } from "./services/csv";
+import {
+  parseCSV,
+  stringifyCSV,
+  detectDelimiter,
+  firstRowLooksLikeData,
+  getDelimiterName,
+} from "./services/csv";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { CommandBar } from "./components/CommandBar";
@@ -16,7 +21,15 @@ const RECOVERY_KEY = "csv-recovery";
 const RECOVERY_DEBOUNCE_MS = 30_000;
 
 function App() {
-  const { fileName, isDirty } = useCsvStore();
+  const {
+    fileName,
+    isDirty,
+    data,
+    delimiter,
+    hasHeader,
+    toggleHeader,
+    setSearchOpen,
+  } = useCsvStore();
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
 
   const [toast, setToast] = useState<{
@@ -43,29 +56,62 @@ function App() {
   );
 
   // Load a file from a path (used by file association and open handlers)
-  const handleLoadFile = useCallback(async (path: string) => {
-    try {
-      const content = await readTextFile(path);
-      const detectedDelimiter = detectDelimiter(content);
-      const parsedData = parseCSV(content, detectedDelimiter);
-      const name = path.split(/[\\/]/).pop() || "Untitled";
-      useCsvStore
-        .getState()
-        .loadFile(path, name, parsedData, detectedDelimiter);
-    } catch {
-      showToast("Failed to open file", "error");
-    }
-  }, []);
+  const handleLoadFile = useCallback(
+    async (path: string) => {
+      try {
+        const content = await readTextFile(path);
+        const detectedDelimiter = detectDelimiter(content);
+        const rawParsed = parseCSV(content, detectedDelimiter, true);
+        let hasHeader = true;
+
+        if (firstRowLooksLikeData([rawParsed.headers])) {
+          hasHeader = await confirm("Does this file have a header row?", {
+            title: "Header Row",
+            kind: "info",
+          });
+        }
+
+        const parsedData = hasHeader
+          ? rawParsed
+          : parseCSV(content, detectedDelimiter, false);
+        const name = path.split(/[\\/]/).pop() || "Untitled";
+        useCsvStore
+          .getState()
+          .loadFile(path, name, parsedData, detectedDelimiter, hasHeader);
+      } catch {
+        showToast("Failed to open file", "error");
+      }
+    },
+    [showToast],
+  );
 
   // File open handler (used by Toolbar and keyboard shortcut)
   const handleOpen = useCallback(async () => {
     const result = await openCsvFile();
     if (result) {
       const detectedDelimiter = detectDelimiter(result.content);
-      const parsedData = parseCSV(result.content, detectedDelimiter);
+      const rawParsed = parseCSV(result.content, detectedDelimiter, true);
+      let hasHeader = true;
+
+      if (firstRowLooksLikeData([rawParsed.headers])) {
+        hasHeader = await confirm("Does this file have a header row?", {
+          title: "Header Row",
+          kind: "info",
+        });
+      }
+
+      const parsedData = hasHeader
+        ? rawParsed
+        : parseCSV(result.content, detectedDelimiter, false);
       useCsvStore
         .getState()
-        .loadFile(result.path, result.name, parsedData, detectedDelimiter);
+        .loadFile(
+          result.path,
+          result.name,
+          parsedData,
+          detectedDelimiter,
+          hasHeader,
+        );
     }
   }, []);
 
@@ -128,6 +174,11 @@ function App() {
       fileName: "Untitled",
     });
   }, []);
+
+  // Find / search handler
+  const handleFind = useCallback(() => {
+    setSearchOpen(true);
+  }, [setSearchOpen]);
 
   // Listen for files opened via "Open With" / file association
   useEffect(() => {
@@ -265,30 +316,54 @@ function App() {
         e.preventDefault();
         setIsCommandBarOpen((prev) => !prev);
       }
+      if (mod && e.key === "f") {
+        e.preventDefault();
+        handleFind();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleOpen, handleSave, handleSaveAs, handleNew]);
+  }, [handleOpen, handleSave, handleSaveAs, handleNew, handleFind]);
 
   return (
     <div className="app-shell">
-      <Toolbar
-        onOpen={handleOpen}
-        onSave={handleSave}
-        onSaveAs={handleSaveAs}
-        onNew={handleNew}
-      />
       <DataGrid />
 
       {/* Status bar */}
       <div className="status-bar">
-        <span>
-          {useCsvStore.getState().data
-            ? `${useCsvStore.getState().data!.rows.length} rows`
-            : "Ready"}
-        </span>
-        <span>⌘O Open · ⌘S Save · Double-click to edit</span>
+        <div className="status-bar-left">
+          {data ? (
+            <>
+              <span className="status-file">
+                {fileName ?? "Untitled"}
+                {isDirty ? " •" : ""}
+              </span>
+              {delimiter && (
+                <span className="status-meta">
+                  {getDelimiterName(delimiter)}
+                </span>
+              )}
+              <button
+                className="status-header-toggle"
+                onClick={toggleHeader}
+                title={
+                  hasHeader
+                    ? "First row is header — click to treat as data"
+                    : "No header row — click to promote first row"
+                }
+              >
+                {hasHeader ? "Header: On" : "Header: Off"}
+              </button>
+              <span className="status-meta">
+                {data.rows.length} rows × {data.headers.length} cols
+              </span>
+            </>
+          ) : (
+            <span className="status-meta">Ready</span>
+          )}
+        </div>
+        <span className="status-hints">⌘K Commands · ⌘F Find · ⌘S Save</span>
       </div>
 
       {isCommandBarOpen && (
@@ -311,6 +386,7 @@ function App() {
               if (d && d.headers.length > 1)
                 useCsvStore.getState().deleteColumn(d.headers.length - 1);
             },
+            onFind: handleFind,
           }}
         />
       )}

@@ -51,3 +51,27 @@
 
 1. Test with `npm run tauri dev` for full Tauri experience
 2. Initialize git repo and make first commit
+
+---
+
+### 2026-03-04 10:08 — Full Rebrand to Jolt Tables + First Commit
+
+**What was done:**
+
+- Full rebrand from "CSV Editor" to "Jolt Tables" across 9 files: index.html, tauri.conf.json, package.json, Cargo.toml, main.rs, App.tsx, README.md, CLAUDE.md, docs/sessions.md
+- Spec compliance review caught missed `main.rs` reference to `csv_editor_lib` — fixed to `jolt_tables_lib`
+- Bundle identifier changed to `com.jolttables.app`
+- Verified `npm run build` and `cargo check` both pass
+- Committed all changes (design system migration + rename) as single commit `ccafdbd`
+
+**Key decisions:**
+
+- Full rebrand (UI + technical identifiers) rather than user-facing only
+- Single commit combining prior design system migration + rename (since all was uncommitted)
+
+**State:** Build green. All work committed. Branch is 2 commits ahead of origin.
+
+**Next steps:**
+
+1. Test with `npm run tauri dev` for full Tauri experience
+2. Push to remote

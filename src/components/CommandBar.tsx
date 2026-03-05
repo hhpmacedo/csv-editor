@@ -70,6 +70,13 @@ const COMMANDS: Command[] = [
     category: "data",
     keywords: ["delete", "remove", "column", "col"],
   },
+  {
+    id: "find",
+    label: "Find",
+    category: "view",
+    shortcut: "⌘F",
+    keywords: ["find", "search", "filter", "rows"],
+  },
 ];
 
 interface CommandBarProps {
@@ -83,6 +90,7 @@ interface CommandBarProps {
     onDeleteRow: () => void;
     onAddColumn: () => void;
     onDeleteColumn: () => void;
+    onFind: () => void;
   };
 }
 
@@ -136,6 +144,9 @@ export function CommandBar({ onClose, actions }: CommandBarProps) {
         return;
       case "delete-column":
         actions.onDeleteColumn();
+        return;
+      case "find":
+        actions.onFind();
         return;
     }
   };

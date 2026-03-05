@@ -27,9 +27,9 @@ npm run build        # TypeScript check + Vite bundle
 ### Frontend (`src/`)
 
 - **State:** Zustand store (`store.ts`) — single flat store holding CSV data (`headers: string[], rows: string[][]`), UI state (search), file metadata (path, delimiter, dirty flag). Uses `loadFile` batch action for file opens. `useCsvStore.getState()` for imperative reads in callbacks.
-- **Components:** `App.tsx` (root, keyboard shortcuts, file handlers, toast/crash-recovery/close-guard logic) → `Toolbar.tsx` (file ops, row/col management, search) + `DataGrid.tsx` (virtual scrolling table with inline editing) + `CommandBar.tsx` (Cmd+K command palette)
-- **Services:** `csv.ts` (Papa Parse wrapper, auto-delimiter detection for `,;|\t`) and `fileOps.ts` (Tauri dialog/fs plugin wrappers)
-- **Styling:** Plain CSS with CSS custom properties (design tokens in `src/styles/tokens.css`). Dark-only theme. JetBrains Mono monospace font. Component-scoped CSS files with component-prefixed class names (`toolbar-*`, `datagrid-*`). State via data attributes (`data-primary="true"`).
+- **Components:** `App.tsx` (root, keyboard shortcuts, file handlers, toast/crash-recovery/close-guard logic, status bar with file info + header toggle) → `DataGrid.tsx` (virtual scrolling table with inline editing, right-click context menu) + `CommandBar.tsx` (⌘K command palette — all actions including Find) + `ContextMenu.tsx` (right-click positioned menu) + `FindBar.tsx` (⌘F floating search overlay, top-right of grid)
+- **Services:** `csv.ts` (Papa Parse wrapper, auto-delimiter detection for `,;|\t`, headerless CSV heuristic, `toColumnLabel` for A/B/C synthetic headers) and `fileOps.ts` (Tauri dialog/fs plugin wrappers)
+- **Styling:** Plain CSS with CSS custom properties (design tokens in `src/styles/tokens.css`). Dark-only theme. JetBrains Mono monospace font. Component-scoped CSS files with component-prefixed class names (`datagrid-*`, `find-bar-*`). State via data attributes.
 
 ### Backend (`src-tauri/`)
 
@@ -57,8 +57,8 @@ Strict mode enabled. `noUnusedLocals` and `noUnusedParameters` are enforced — 
 ## Project Status
 
 - **Status:** Active Development
-- **Last session:** 2026-03-03
-- **Current focus:** Design system migration complete — all 11 tasks done. Build is green.
+- **Last session:** 2026-03-05
+- **Current focus:** Toolbar removed. File info in status bar. ⌘F FindBar + CommandBar "Find" command implemented. Build green.
 - **Next steps:**
-  1. Test with `npm run tauri dev` for full Tauri experience
-  2. Initialize git repo and make first commit
+  1. Manual smoke test with `npm run tauri dev`
+  2. Push to remote

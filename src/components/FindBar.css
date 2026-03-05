@@ -1,0 +1,50 @@
+.find-bar {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.find-bar-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  width: 200px;
+  caret-color: var(--accent-warm);
+}
+
+.find-bar-input::placeholder {
+  color: var(--text-faint);
+}
+
+.find-bar-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.find-bar-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+  font-family: inherit;
+}
+
+.find-bar-close:hover {
+  color: var(--text-primary);
+}
